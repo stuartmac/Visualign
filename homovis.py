@@ -7,20 +7,6 @@ import requests
 from varalign import alignments
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("alignment", help="Input the stockholm format alignment path to be analyzed.",
-                    type=str)
-parser.add_argument("magnification", help="Enter how many armstrongs the resolution of the images are to be.", type=int)
-#parser.add_argument("--modelcount", help="Enter your desired number of models.", type=int)
-args = parser.parse_args()
-
-alignment_path = args.alignment
-
-aln = AlignIO.read(alignment_path, 'stockholm')
-print aln
-
-[seq.annotations[k] for k in ['start', 'end']]
-seq.dbxrefs
 
 def parse_pdb_xrefs(seq):
     """
@@ -36,24 +22,6 @@ def parse_pdb_xrefs(seq):
         length = len(range(start, end + 1))  # Calculate length
         pdb_mappings.append((pdb_id, start, end, chain_id, length))
     return pdb_mappings
-pdb_mappings = parse_pdb_xrefs(seq)
-pdb_mappings
-
-# Read in columns from file
-umd_family_info = '/homes/smacgowan/projects/umd_families/columns.csv'
-column_table = pd.read_csv(umd_family_info,
-                           index_col=0,
-                           converters={'columns_pandas':ast.literal_eval})
-column_table.head(2)
-
-alignment_name = alignment_path.split('/')[-1][:7]
-umd_entry = column_table[column_table['AC'].str.contains(alignment_name)]
-umd_entry
-
-umd_columns = umd_entry.get_value(122, 'columns_pandas')
-umd_columns
-
-itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
 
 
 def chimera_command(pdb_id, start, end, chain_id, marked=None, name=None, template_n=0):
@@ -83,6 +51,64 @@ def chimera_command(pdb_id, start, end, chain_id, marked=None, name=None, templa
         command += '; setattr M name {} #MODEL_ID'.format(name)
 
     return command
+
+
+def uniprot_pdb_query(uniprot_id):
+    "Query SIFTS 'best_structures' endpoint."
+    url = ''.join([sifts_best, uniprot_id])
+    result = requests.get(url)
+    return result.json()
+
+
+def find_overlap(mapping, seq_range):
+    "Calculate overlap between Pfam sequence and SIFTS mapped PDB."
+    uniprot_resnums = range(*[mapping[k] for k in ('unp_start', 'unp_end')])
+    covered = set(seq_range).intersection(set(uniprot_resnums))
+    return (mapping['pdb_id'], mapping['chain_id'], len(covered) / float(len(seq_range)))
+
+
+def uniprot_to_pdb(mapping):
+    "Map UniProt residue numbers to PDB residue numbers."
+    pdb_resnums = range(*[mapping[k] for k in ('start', 'end')])
+    uniprot_resnums = range(*[mapping[k] for k in ('unp_start', 'unp_end')])
+    return dict(zip(uniprot_resnums, pdb_resnums))
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("alignment", help="Input the stockholm format alignment path to be analyzed.",
+                    type=str)
+parser.add_argument("magnification", help="Enter how many armstrongs the resolution of the images are to be.", type=int)
+#parser.add_argument("--modelcount", help="Enter your desired number of models.", type=int)
+args = parser.parse_args()
+
+alignment_path = args.alignment
+
+aln = AlignIO.read(alignment_path, 'stockholm')
+print aln
+
+
+
+pdb_mappings = parse_pdb_xrefs(seq)
+pdb_mappings
+
+# Read in columns from file
+umd_family_info = '/homes/smacgowan/projects/umd_families/columns.csv'
+column_table = pd.read_csv(umd_family_info,
+                           index_col=0,
+                           converters={'columns_pandas':ast.literal_eval})
+column_table.head(2)
+
+alignment_name = alignment_path.split('/')[-1][:7]
+umd_entry = column_table[column_table['AC'].str.contains(alignment_name)]
+umd_entry
+
+umd_columns = umd_entry.get_value(122, 'columns_pandas')
+umd_columns
+
+itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
+
+
+
 
 
 # Select example sequence mapped PDB (sort so that choice is first)
@@ -124,22 +150,14 @@ seqs_known_structure
 sifts_best = 'http://www.ebi.ac.uk/pdbe/api/mappings/best_structures/'
 example = 'Q9JK66'
 
-def uniprot_pdb_query(uniprot_id):
-    "Query SIFTS 'best_structures' endpoint."
-    url = ''.join([sifts_best, uniprot_id])
-    result = requests.get(url)
-    return result.json()
+
 
 
 result = uniprot_pdb_query(example)
 mapping = result[example][0]  # Extract first result from SIFTS query
 mapping
 
-def find_overlap(mapping, seq_range):
-    "Calculate overlap between Pfam sequence and SIFTS mapped PDB."
-    uniprot_resnums = range(*[mapping[k] for k in ('unp_start', 'unp_end')])
-    covered = set(seq_range).intersection(set(uniprot_resnums))
-    return (mapping['pdb_id'], mapping['chain_id'], len(covered) / float(len(seq_range)))
+
 
 
 # Find overlaps for all retrieved SIFTS mappings
@@ -148,11 +166,7 @@ overlaps = [find_overlap(mapping, seq_range) for mapping in result[example]]
 overlaps.sort(key=lambda x: x[2], reverse=True)  # Reorder
 overlaps
 
-def uniprot_to_pdb(mapping):
-    "Map UniProt residue numbers to PDB residue numbers."
-    pdb_resnums = range(*[mapping[k] for k in ('start', 'end')])
-    uniprot_resnums = range(*[mapping[k] for k in ('unp_start', 'unp_end')])
-    return dict(zip(uniprot_resnums, pdb_resnums))
+
 
 
 uniprot_to_pdb(mapping)
@@ -229,7 +243,7 @@ chimera_script.write = ("select :/marked; namesel marked")
 #\n might work
 
 #chimera_script.write = ("display :/marked \n focus :/marked z < {} \n center :/marked \n cofr :/marked \n select :/marked \n namesel marked").format()
-chimera_script.write = ("findhbond selRestrict "marked & without CA/C1'" reveal true intermodel false")
+chimera_script.write = ("findhbond selRestrict \"marked & without CA/C1'\"reveal true intermodel false")
 chimera_script.write = ("~modeldisp #1-2")
 chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
 chimera_script.write = ("~modeldisp #0")
