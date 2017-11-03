@@ -19,12 +19,6 @@ alignment_path = args.alignment
 aln = AlignIO.read(alignment_path, 'stockholm')
 print aln
 
-example = 'PRKN2_RAT/313-378'
-for seq in aln:
-    if seq.id == example:
-        break
-print seq
-
 [seq.annotations[k] for k in ['start', 'end']]
 seq.dbxrefs
 
