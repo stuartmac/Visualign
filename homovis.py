@@ -78,6 +78,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("alignment", help="Input the stockholm format alignment path to be analyzed.",
                         type=str)
+    parser.add_argument("residue", help= "Input the residue you want to analyze.", type=int)
     parser.add_argument("magnification", help="Enter how many armstrongs the resolution of the images are to be.", type=int)
     #parser.add_argument("--modelcount", help="Enter your desired number of models.", type=int)
     args = parser.parse_args()
@@ -89,40 +90,40 @@ if __name__ == '__main__':
 
 
 
-    pdb_mappings = parse_pdb_xrefs(seq)
-    pdb_mappings
+    # pdb_mappings = parse_pdb_xrefs(seq)
+    #
+    # # Read in columns from file
+    # umd_family_info = '/homes/smacgowan/projects/umd_families/columns.csv'
+    # column_table = pd.read_csv(umd_family_info,
+    #                            index_col=0,
+    #                            converters={'columns_pandas':ast.literal_eval})
+    # column_table.head(2)
+    #
+    # alignment_name = alignment_path.split('/')[-1][:7]
+    # umd_entry = column_table[column_table['AC'].str.contains(alignment_name)]
+    # umd_entry
+    #
+    # umd_columns = umd_entry.get_value(122, 'columns_pandas')
+    # umd_columns
+    #
+    # itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
+    #
+    #
+    #
+    #
+    #
+    # # Select example sequence mapped PDB (sort so that choice is first)
+    # pdb_mappings.sort(key=lambda x: x[4], reverse=True)  # Sort by length
+    # pdb_mappings.sort(key=lambda x: x[0], reverse=True)  # Sort by PDB
+    #
+    # # Lookup marked columns in example seq
+    # marked = itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
+    #
+    # # Build command
+    # command = chimera_command(*pdb_mappings[0][:-1], marked=marked, template_n=1)
+    # command
 
-    # Read in columns from file
-    umd_family_info = '/homes/smacgowan/projects/umd_families/columns.csv'
-    column_table = pd.read_csv(umd_family_info,
-                               index_col=0,
-                               converters={'columns_pandas':ast.literal_eval})
-    column_table.head(2)
-
-    alignment_name = alignment_path.split('/')[-1][:7]
-    umd_entry = column_table[column_table['AC'].str.contains(alignment_name)]
-    umd_entry
-
-    umd_columns = umd_entry.get_value(122, 'columns_pandas')
-    umd_columns
-
-    itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
-
-
-
-
-
-    # Select example sequence mapped PDB (sort so that choice is first)
-    pdb_mappings.sort(key=lambda x: x[4], reverse=True)  # Sort by length
-    pdb_mappings.sort(key=lambda x: x[0], reverse=True)  # Sort by PDB
-
-    # Lookup marked columns in example seq
-    marked = itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
-
-    # Build command
-    command = chimera_command(*pdb_mappings[0][:-1], marked=marked, template_n=1)
-    command
-
+    umd_columns = [args.residue]
     model = 0  # Initialise model ID
     chimera_script = []
     for seq in aln:
@@ -133,7 +134,9 @@ if __name__ == '__main__':
             pdb_mappings.sort(key=lambda x: x[0], reverse=True)  # Sort by PDB
 
             # Identify marked residue
-            marked = itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
+            index_dict = dict(alignments.index_seq_to_alignment(seq))
+            #marked = itemgetter(*umd_columns)(index_dict)
+            marked = index_dict[umd_columns[0]]
 
             # Write command
             command = chimera_command(*pdb_mappings[0][:-1], marked=marked)
