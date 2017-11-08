@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
 
 
-    # pdb_mappings = parse_pdb_xrefs(seq)
+    #pdb_mappings = parse_pdb_xrefs(seq)
     #
     # # Read in columns from file
     # umd_family_info = '/homes/smacgowan/projects/umd_families/columns.csv'
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     # umd_entry = column_table[column_table['AC'].str.contains(alignment_name)]
     # umd_entry
     #
-    # umd_columns = umd_entry.get_value(122, 'columns_pandas')
+    #umd_columns = umd_entry.get_value(122, 'columns_pandas')
     # umd_columns
     #
     # itemgetter(*umd_columns)(dict(alignments.index_seq_to_alignment(seq)))
@@ -236,14 +236,13 @@ if __name__ == '__main__':
     mm_script = ['mm #{}:/domain #{}:/domain; wait'.format('0', str(i+1)) for i in range(len(chimera_script)-1)]
     #mm_script = ['mm #0 #1-{}; wait'.format(len(chimera_script)-1)]
     chimera_script = chimera_script + mm_script
-    chimera_script
 
     #Add quality of life commands
-    chimera_script.write = ("display :/marked")
-    chimera_script.write = ("focus :/marked z < {}").format(args.magnification)
-    chimera_script.write = ("center :/marked")
-    chimera_script.write = ("cofr :/marked")
-    chimera_script.write = ("select :/marked; namesel marked")
+    chimera_script.append("display :/marked")
+    chimera_script.append("focus :/marked z < {}".format(args.magnification))
+    chimera_script.append("center :/marked")
+    chimera_script.append("cofr :/marked")
+    chimera_script.append("select :/marked; namesel marked")
     #\n might work
 
     #chimera_script.write = ("display :/marked \n focus :/marked z < {} \n center :/marked \n cofr :/marked \n select :/marked \n namesel marked").format()
