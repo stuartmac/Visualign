@@ -145,33 +145,20 @@ if __name__ == '__main__':
             chimera_script.append((seq.id, command))
             model += 1
 
-    chimera_script
-
     seqs_known_structure = zip(*chimera_script)[0]
-    seqs_known_structure
 
     # Get SIFTS "best structure" for a sequence.
     sifts_best = 'http://www.ebi.ac.uk/pdbe/api/mappings/best_structures/'
     example = 'Q9JK66'
 
-
-
-
     result = uniprot_pdb_query(example)
     mapping = result[example][0]  # Extract first result from SIFTS query
-    mapping
-
-
 
 
     # Find overlaps for all retrieved SIFTS mappings
     seq_range = range(313, 378)  # Seq start/end for example sequence
     overlaps = [find_overlap(mapping, seq_range) for mapping in result[example]]
     overlaps.sort(key=lambda x: x[2], reverse=True)  # Reorder
-    overlaps
-
-
-
 
     uniprot_to_pdb(mapping)
 
@@ -228,7 +215,8 @@ if __name__ == '__main__':
             command = command.replace('MODEL_ID', str(model))
             commands.append((seq.id, command))
             model += 1
-    commands
+
+    chimera_script_model_length = len(chimera_script)
 
     # Add match maker
     chimera_script = list(zip(*commands)[1])
@@ -243,18 +231,31 @@ if __name__ == '__main__':
     chimera_script.append("center :/marked")
     chimera_script.append("cofr :/marked")
     chimera_script.append("select :/marked; namesel marked")
+    chimera_script.append("findhbond selRestrict \"marked & without CA/C1'\"reveal true intermodel false")
     #\n might work
 
+    chimera_script = [x.replace("MODEL_ID", str(i))
+                      for i,x in enumerate(chimera_script)]
+
+    n = 0
+    while n <= chimera_script_model_length:
+        chimera_script.append("~modeldisp")
+        chimera_script.append("modeldisp #{}".format(str(n)))
+        chimera_script.append("copy file{}.png png".format(pdb_id))
+        n+=1
+
+
+
     #chimera_script.write = ("display :/marked \n focus :/marked z < {} \n center :/marked \n cofr :/marked \n select :/marked \n namesel marked").format()
-    chimera_script.write = ("findhbond selRestrict \"marked & without CA/C1'\"reveal true intermodel false")
-    chimera_script.write = ("~modeldisp #1-2")
-    chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
-    chimera_script.write = ("~modeldisp #0")
-    chimera_script.write = ("modeldisp #1")
-    chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
-    chimera_script.write = ("~modeldisp #1")
-    chimera_script.write = ("modeldisp #2")
-    chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
+    #chimera_script.write = ("findhbond selRestrict \"marked & without CA/C1'\"reveal true intermodel false")
+    #chimera_script.write = ("~modeldisp #1-2")
+    #chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
+    #chimera_script.write = ("~modeldisp #0")
+    #chimera_script.write = ("modeldisp #1")
+    #chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
+    #chimera_script.write = ("~modeldisp #1")
+    #chimera_script.write = ("modeldisp #2")
+    #chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
 
     # com_file_name = 'PF01485_chimera_alignment.com'
     com_file_name = 'PF00001_chimera_alignment.com'
