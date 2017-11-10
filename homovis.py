@@ -4,6 +4,8 @@ from Bio import AlignIO
 from operator import itemgetter
 import pandas as pd
 import requests
+import subprocess
+import os
 from varalign import alignments
 import argparse
 
@@ -249,22 +251,11 @@ if __name__ == '__main__':
         chimera_script.append("copy {}.png png".format(commands[n][0]))
         n+=1
 
+    com_file_name = '{}_chimera_alignment.com".format'.format(args.alignment)
 
+    cwd = os.getcwd()
 
-    #chimera_script.write = ("display :/marked \n focus :/marked z < {} \n center :/marked \n cofr :/marked \n select :/marked \n namesel marked").format()
-    #chimera_script.write = ("findhbond selRestrict \"marked & without CA/C1'\"reveal true intermodel false")
-    #chimera_script.write = ("~modeldisp #1-2")
-    #chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
-    #chimera_script.write = ("~modeldisp #0")
-    #chimera_script.write = ("modeldisp #1")
-    #chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
-    #chimera_script.write = ("~modeldisp #1")
-    #chimera_script.write = ("modeldisp #2")
-    #chimera_script.write = ("copy file {}.png png").format(seq.id + _ + pdb_id)
-
-    # com_file_name = 'PF01485_chimera_alignment.com'
-    com_file_name = 'PF00001_chimera_alignment.com'
-    com_file_name = 'PF00104_chimera_alignment.com'
+    subprocess.Popen(["C:\Program Files\Chimera 1.8\bin\chimera.exe", "--stereo", "seq", "com_file_name"])
 
     with open(com_file_name, 'w') as output:
         for line in chimera_script:
