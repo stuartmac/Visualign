@@ -238,10 +238,10 @@ if __name__ == '__main__':
                       for i,x in enumerate(chimera_script)]
 
     n = 0
-    while n <= chimera_script_model_length:
+    while n < len(commands):
         chimera_script.append("~modeldisp")
         chimera_script.append("modeldisp #{}".format(str(n)))
-        chimera_script.append("copy file{}.png png".format(pdb_id))
+        chimera_script.append("copy file{}.png png".format(commands[n][0]))
         n+=1
 
 
