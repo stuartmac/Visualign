@@ -210,7 +210,9 @@ if __name__ == '__main__':
             if isinstance(marked, str):
                 marked = [marked] if marked in res_map.keys() else []
             # Write command
+            seq.id = seq.id.replace('/','_')
             model_name = seq.id + '({})'.format(pdb_id)
+            #model_name = model_name.replace("/", "_")
             command = chimera_command(pdb_id, pdb_start, pdb_end, chain_id, marked, model_name, template_n=1) + '; wait'
             command = command.replace('MODEL_ID', str(model))
             commands.append((seq.id, command))
@@ -237,11 +239,14 @@ if __name__ == '__main__':
     chimera_script = [x.replace("MODEL_ID", str(i))
                       for i,x in enumerate(chimera_script)]
 
+
+
+
     n = 0
     while n < len(commands):
         chimera_script.append("~modeldisp")
         chimera_script.append("modeldisp #{}".format(str(n)))
-        chimera_script.append("copy file{}.png png".format(commands[n][0]))
+        chimera_script.append("copy {}.png png".format(commands[n][0]))
         n+=1
 
 
