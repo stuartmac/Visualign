@@ -248,16 +248,18 @@ if __name__ == '__main__':
     while n < len(commands):
         chimera_script.append("~modeldisp")
         chimera_script.append("modeldisp #{}".format(str(n)))
-        chimera_script.append("copy {}.png png".format(commands[n][0]))
+        chimera_script.append("copy file {}.png png".format(commands[n][0]))
         n+=1
 
-    com_file_name = '{}_chimera_alignment.com".format'.format(args.alignment)
+    com_file_name = '{}_chimera_alignment.com'.format(args.alignment.split('/')[-1])
 
     cwd = os.getcwd()
 
-    subprocess.Popen(["C:\Program Files\Chimera 1.8\bin\chimera.exe", "--stereo", "seq", "com_file_name"])
 
     with open(com_file_name, 'w') as output:
         for line in chimera_script:
             output.write(line)
             output.write('\n')
+
+
+    subprocess.call(["chimera", "--nogui", com_file_name])
