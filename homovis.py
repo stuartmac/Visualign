@@ -1,4 +1,6 @@
-
+'''
+This script gathers structures
+'''
 import ast
 from Bio import AlignIO
 from operator import itemgetter
