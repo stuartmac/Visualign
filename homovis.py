@@ -1,5 +1,7 @@
 '''
-This script gathers structures
+This script gathers structures from a homologous protein family multiple sequence alignment input and generates an output of a collage of the images of a residue
+of interest on each different structure generated from the input. To operate this script, the homologous protein library in stockholm format must be input,
+along with the alignment number of the residue of interest. Optionally, the user may input a desired magnification for the generated images (default is z < 5)
 '''
 import ast
 from Bio import AlignIO
@@ -10,6 +12,7 @@ import subprocess
 import os
 from varalign import alignments
 import argparse
+from PIL import Image
 
 
 def parse_pdb_xrefs(seq):
@@ -76,6 +79,35 @@ def uniprot_to_pdb(mapping):
     pdb_resnums = range(*[mapping[k] for k in ('start', 'end')])
     uniprot_resnums = range(*[mapping[k] for k in ('unp_start', 'unp_end')])
     return dict(zip(uniprot_resnums, pdb_resnums))
+
+def create_collage(width, height, listofimages):
+    cols = 3
+    rows = 2
+    thumbnail_width = width//cols
+    thumbnail_height = height//rows
+    size = thumbnail_width, thumbnail_height
+    new_im = Image.new('RGB', (width, height))
+    ims = []
+    for p in listofimages:
+        im = Image.open(p)
+        im.thumbnail(size)
+        ims.append(im)
+    i = 0
+    x = 0
+    y = 0
+    for col in range(cols):
+        for row in range(rows):
+            print(i, x, y)
+            new_im.paste(ims[i], (x, y))
+            i += 1
+            y += thumbnail_height
+        x += thumbnail_width
+        y = 0
+
+    new_im.save("Collage.jpg")
+
+
+
 
 
 if __name__ == '__main__':
@@ -247,10 +279,12 @@ if __name__ == '__main__':
 
 
     n = 0
+    image_file_names = []
     while n < len(commands):
         chimera_script.append("~modeldisp")
         chimera_script.append("modeldisp #{}".format(str(n)))
-        chimera_script.append("copy file {}.png png".format(commands[n][0]))
+        chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
+        image_file_names.append("{}.png".format(commands[n][0]))
         n+=1
 
     com_file_name = '{}_chimera_alignment.com'.format(args.alignment.split('/')[-1])
@@ -265,3 +299,5 @@ if __name__ == '__main__':
 
 
     subprocess.call(["chimera", "--nogui", com_file_name])
+
+    create_collage(720*3, 720*2, image_file_names[:6])
