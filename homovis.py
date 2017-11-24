@@ -122,7 +122,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     alignment_path = args.alignment
-    interim = tuple(alignment_path)[-11:]
+
     aln = AlignIO.read(alignment_path, 'stockholm')
     print aln
 
@@ -285,44 +285,38 @@ if __name__ == '__main__':
         chimera_script.append("~modeldisp")
         chimera_script.append("modeldisp #{}".format(str(n)))
         chimera_script.append("rlabel marked")
-        chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+        chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
         image_file_names.append("{}.png".format(commands[n][0]))
 
         if args.rotationX:
             chimera_script.append("turn 1,0,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}_{}.png png width 720 height 720".format(commands[n][0],"90"))
             chimera_script.append("turn 1,0,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0],"180"))
             chimera_script.append("turn 1,0,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0],"270"))
             chimera_script.append("turn 1,0,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
-        else:
-            continue
+
 
         if args.rotationY:
             chimera_script.append("turn 0,1,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
             chimera_script.append("turn 0,1,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
             chimera_script.append("turn 0,1,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
             chimera_script.append("turn 0,1,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
-        else:
-            continue
+
 
         if args.rotationZ:
             chimera_script.append("turn 0,0,1 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
             chimera_script.append("turn 0,0,1 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
             chimera_script.append("turn 0,0,1 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
+            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
             chimera_script.append("turn 0,0,1 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(interim[0:7],commands[n][0]))
-        else:
-            continue
+
 
         chimera_script.append("~rlabel marked")
         n+=1
