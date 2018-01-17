@@ -80,32 +80,6 @@ def uniprot_to_pdb(mapping):
     uniprot_resnums = range(*[mapping[k] for k in ('unp_start', 'unp_end')])
     return dict(zip(uniprot_resnums, pdb_resnums))
 
-def create_collage(width, height, listofimages):
-    cols = 3
-    rows = 2
-    thumbnail_width = width//cols
-    thumbnail_height = height//rows
-    size = thumbnail_width, thumbnail_height
-    new_im = Image.new('RGB', (width, height))
-    ims = []
-    for p in listofimages:
-        im = Image.open(p)
-        im.thumbnail(size)
-        ims.append(im)
-    i = 0
-    x = 0
-    y = 0
-    for col in range(cols):
-        for row in range(rows):
-            print(i, x, y)
-            new_im.paste(ims[i], (x, y))
-            i += 1
-            y += thumbnail_height
-        x += thumbnail_width
-        y = 0
-
-    new_im.save("Collage.jpg")
-
 
 
 
@@ -116,9 +90,10 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument("residue", help= "Input the residue you want to analyze.", type=int)
     parser.add_argument("magnification", help="Enter how many armstrongs the resolution of the images are to be.", type=int)
-    parser.add_argument("--rotationX", help="Enter for X axis rotation.", action="store_true")
-    parser.add_argument("--rotationY", help="Enter for Y axis rotation.", action="store_true")
-    parser.add_argument("--rotationZ", help="Enter for Z axis rotation.", action="store_true")
+    parser.add_argument("Image_Width", help="Enter how many pixels the width of the images is to be.",
+                        type=int)
+    parser.add_argument("Image_Height", help="Enter how many pixels the height of the images is to be.",
+                        type=int)
     args = parser.parse_args()
 
     alignment_path = args.alignment
@@ -163,27 +138,27 @@ if __name__ == '__main__':
 
     umd_columns = [args.residue]
     model = 0  # Initialise model ID
-    chimera_script = []
-    for seq in aln:
-        if any([x.startswith('PDB') for x in seq.dbxrefs]):
-            # Get PDB xrefs
-            pdb_mappings = parse_pdb_xrefs(seq)
-            pdb_mappings.sort(key=lambda x: x[4], reverse=True)  # Sort by length
-            pdb_mappings.sort(key=lambda x: x[0], reverse=True)  # Sort by PDB
-
-            # Identify marked residue
-            index_dict = dict(alignments.index_seq_to_alignment(seq))
-            #marked = itemgetter(*umd_columns)(index_dict)
-            marked = index_dict[umd_columns[0]]
-
-            # Write command
-            command = chimera_command(*pdb_mappings[0][:-1], marked=marked)
-            command = command.replace('MODEL_ID', str(model))  # Substitue model ID placeholder
-
-            chimera_script.append((seq.id, command))
-            model += 1
-
-    seqs_known_structure = zip(*chimera_script)[0]
+    # chimera_script = []
+    # for seq in aln:
+    #     if any([x.startswith('PDB') for x in seq.dbxrefs]):
+    #         # Get PDB xrefs
+    #         pdb_mappings = parse_pdb_xrefs(seq)
+    #         pdb_mappings.sort(key=lambda x: x[4], reverse=True)  # Sort by length
+    #         pdb_mappings.sort(key=lambda x: x[0], reverse=True)  # Sort by PDB
+    #
+    #         # Identify marked residue
+    #         index_dict = dict(alignments.index_seq_to_alignment(seq))
+    #         #marked = itemgetter(*umd_columns)(index_dict)
+    #         marked = index_dict[umd_columns[0]]
+    #
+    #         # Write command
+    #         command = chimera_command(*pdb_mappings[0][:-1], marked=marked)
+    #         command = command.replace('MODEL_ID', str(model))  # Substitue model ID placeholder
+    #
+    #         chimera_script.append((seq.id, command))
+    #         model += 1
+    #
+    # seqs_known_structure = zip(*chimera_script)[0]
 
     # Get SIFTS "best structure" for a sequence.
     sifts_best = 'http://www.ebi.ac.uk/pdbe/api/mappings/best_structures/'
@@ -253,85 +228,73 @@ if __name__ == '__main__':
             #model_name = model_name.replace("/", "_")
             command = chimera_command(pdb_id, pdb_start, pdb_end, chain_id, marked, model_name, template_n=1) + '; wait'
             command = command.replace('MODEL_ID', str(model))
-            commands.append((seq.id, command))
+            commands.append((seq.id, pdb_id, chain_id, marked, command))
             model += 1
 
+    chimera_script = list(zip(*commands)[4])
     chimera_script_model_length = len(chimera_script)
 
     # Add match maker
-    chimera_script = list(zip(*commands)[1])
-    #mm_script = ['mm #{} #{}; wait'.format('0', str(i+1)) for i in range(len(chimera_script)-1)]
-    mm_script = ['mm #{}:/domain #{}:/domain; wait'.format('0', str(i+1)) for i in range(len(chimera_script)-1)]
-    #mm_script = ['mm #0 #1-{}; wait'.format(len(chimera_script)-1)]
+    # mm_script = ['mm #{} #{}; wait'.format('0', str(i+1)) for i in range(len(chimera_script)-1)]
+    mm_script = ['mm #{}:/domain #{}:/domain; wait'.format('0', str(i + 1)) for i in
+                 range(len(chimera_script) - 1)]
+    # mm_script = ['mm #0 #1-{}; wait'.format(len(chimera_script)-1)]
     chimera_script = chimera_script + mm_script
-
-    #Add quality of life commands
+    # Add quality of life commands
     chimera_script.append("display :/marked")
     chimera_script.append("focus :/marked z < {}".format(args.magnification))
     chimera_script.append("center :/marked")
     chimera_script.append("cofr :/marked")
     chimera_script.append("select :/marked; namesel marked")
     chimera_script.append("findhbond selRestrict \"marked & without CA/C1'\"reveal true intermodel false")
-    #\n might work
+    # \n might work
 
     chimera_script = [x.replace("MODEL_ID", str(i))
-                      for i,x in enumerate(chimera_script)]
+                      for i, x in enumerate(chimera_script)]
+    Session1_file_name = 'Manual_session_one.com'
 
-
+    with open(Session1_file_name, 'w') as output:
+        for line in chimera_script:
+            output.write(line)
+            output.write('\n')
 
     n = 0
-    image_file_names = []
     while n < len(commands):
         chimera_script.append("~modeldisp")
         chimera_script.append("modeldisp #{}".format(str(n)))
         chimera_script.append("rlabel marked")
-        chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
-        image_file_names.append("{}.png".format(commands[n][0]))
-
-        if args.rotationX:
-            chimera_script.append("turn 1,0,0 90")
-            chimera_script.append("copy file {}_{}.png png width 720 height 720".format(commands[n][0],"90"))
-            chimera_script.append("turn 1,0,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0],"180"))
-            chimera_script.append("turn 1,0,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0],"270"))
-            chimera_script.append("turn 1,0,0 90")
-
-
-        if args.rotationY:
-            chimera_script.append("turn 0,1,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
-            chimera_script.append("turn 0,1,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
-            chimera_script.append("turn 0,1,0 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
-            chimera_script.append("turn 0,1,0 90")
-
-
-        if args.rotationZ:
-            chimera_script.append("turn 0,0,1 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
-            chimera_script.append("turn 0,0,1 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
-            chimera_script.append("turn 0,0,1 90")
-            chimera_script.append("copy file {}.png png width 720 height 720".format(commands[n][0]))
-            chimera_script.append("turn 0,0,1 90")
-
-
+        chimera_script.append(
+            "copy file {}_{}_{}_{}.png png width {} height {}".format(commands[n][0], commands[n][1],
+                                                                         commands[n][2], commands[n][3], args.Image_Width, args.Image_Height))
         chimera_script.append("~rlabel marked")
-        n+=1
+        n += 1
+
+    manual_list = list()
+    n = 0
+    while n < len(commands):
+        manual_list.append("~modeldisp")
+        manual_list.append("modeldisp #{}".format(str(n)))
+        manual_list.append("rlabel marked")
+        manual_list.append(
+            "copy file {}_{}_{}_{}.png png width {} height {}".format(commands[n][0], commands[n][1],
+                                                                         commands[n][2], commands[n][3], args.Image_Width, args.Image_Height))
+        manual_list.append("~rlabel marked")
+        n += 1
 
     com_file_name = '{}_chimera_alignment.com'.format(args.alignment.split('/')[-1])
+    Session2_file_name = 'Manual_session_two.com'
 
     cwd = os.getcwd()
-
 
     with open(com_file_name, 'w') as output:
         for line in chimera_script:
             output.write(line)
             output.write('\n')
 
+    with open(Session2_file_name, 'w') as output:
+        for line in manual_list:
+            output.write(line)
+            output.write('\n')
+
 
     subprocess.call(["chimera", "--nogui", com_file_name])
-
-    create_collage(720*3, 720*2, image_file_names[:6])
